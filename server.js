@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
 
 // Load environment variables
 dotenv.config();
@@ -10,6 +11,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, "frontend/build")));
 
 // Routes
 const userRoutes = require("./routes/userRoutes");
@@ -25,11 +29,14 @@ app.use("/api/requests", requestRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/jobs", jobRoutes); // <-- handle job applications
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("County Services Backend is running!");
+// Catch-all handler: send back React's index.html file for any non-API routes
+app.use((req, res, next) => {
+  // Skip if it's an API route
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  // Send React app for all other routes
+  res.sendFile(path.join(__dirname, "frontend/build", "index.html"));
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
